@@ -1,0 +1,18 @@
+num = @{ signed_int ~ ("." ~ ASCII_DIGIT*)? ~ (^"e" ~ signed_int)? }
+signed_int = { ("+" | "-")? ~ ASCII_DIGIT+ }
+int = @{ ASCII_DIGIT+ }
+
+operation = _{ add | subtract | multiply | divide | power }
+    add      = { "+" }
+    subtract = { "-" }
+    multiply = { "*" }
+    divide   = { "/" }
+    power    = { "^" }
+
+expr = { term ~ (operation ~ term)* }
+die = { int ~ "d" ~ int }
+term = _{ die | num | "(" ~ expr ~ ")" }
+
+calculation = _{ SOI ~ expr ~ EOI }
+
+WHITESPACE = _{ " " | "\t" }
