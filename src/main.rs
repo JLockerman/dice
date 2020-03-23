@@ -69,37 +69,37 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn eval(expression: Pairs<Rule>) -> u32 {
+fn eval(expression: Pairs<Rule>) -> f64 {
     PREC_CLIMBER.climb(
         expression,
         |pair: Pair<Rule>| match pair.as_rule() {
             Rule::die => {
                 let mut s = pair.as_str().split('d');
-                let first = s.next().unwrap().parse::<f64>().unwrap() as u32;
+                let first = s.next().unwrap().parse::<u32>().unwrap();
                 match s.next() {
-                    None => first,
+                    None => first as f64,
                     Some(second) => {
-                        let second = second.parse::<f64>().unwrap() as u32;
+                        let second = second.parse::<u32>().unwrap();
                         let mut sum = 0;
                         for _ in 0..first {
                             sum += Uniform::from(0..second).sample(&mut thread_rng())
                         }
-                        sum
+                        sum as f64
                     }
                 }
             }
             Rule::num => {
-                pair.as_str().parse::<f64>().unwrap() as u32
+                pair.as_str().parse::<f64>().unwrap()
             }
             Rule::expr => eval(pair.into_inner()),
             _ => unreachable!(),
         },
-        |lhs: u32, op: Pair<Rule>, rhs: u32| match op.as_rule() {
+        |lhs: f64, op: Pair<Rule>, rhs: f64| match op.as_rule() {
             Rule::add      => lhs + rhs,
             Rule::subtract => lhs - rhs,
             Rule::multiply => lhs * rhs,
             Rule::divide   => lhs / rhs,
-            Rule::power    => (lhs as f64).powf(rhs as f64) as u32,
+            Rule::power    => lhs.powf(rhs),
             _ => unreachable!(),
         },
     )
