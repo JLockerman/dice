@@ -10,8 +10,12 @@ operation = _{ add | subtract | multiply | divide | power }
     power    = { "^" }
 
 expr = { term ~ (operation ~ term)* }
-die = { int ~ "d" ~ int }
+int_expr = { int | "(" ~ int_term ~ (operation ~ int_term)* ~ ")" }
+
+die = { int_expr ~ "d" ~ int_expr }
+
 term = _{ die | num | "(" ~ expr ~ ")" }
+int_term = _{die | int | "(" ~ int_expr ~ ")" }
 
 calculation = _{ SOI ~ expr ~ EOI }
 

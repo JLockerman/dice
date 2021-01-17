@@ -4,13 +4,7 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
-use std::io::{
-    self,
-    stdin,
-    stdout,
-    BufRead,
-    Write,
-};
+use std::io;
 
 use pest::{
     Parser,
@@ -21,6 +15,8 @@ use pest::{
     },
 };
 
+use once_cell::sync::Lazy;
+
 use rand::{
     thread_rng,
     distributions::{
@@ -29,7 +25,10 @@ use rand::{
     },
 };
 
-use once_cell::sync::Lazy;
+use rustyline::{
+    Editor,
+    error::ReadlineError,
+};
 
 #[derive(Parser)]
 #[grammar = "grammar.pest"]
@@ -47,22 +46,36 @@ static PREC_CLIMBER: Lazy<PrecClimber<Rule>> = Lazy::new(||{
 });
 
 fn main() -> io::Result<()> {
-    let input = stdin();
-    let input = input.lock();
-    print!("> ");
-    let _ = stdout().flush();
-    for line in input.lines() {
-        let line = line?;
-        match DiceParser::parse(Rule::calculation, &line) {
-            Err(e) => {
-                println!("{}", e);
-                print!("> ");
-                let _ = stdout().flush();
+    let mut ed = Editor::<()>::new();
+    loop {
+        let line = ed.readline("> ");
+        let line = match line {
+            Ok(line) => line,
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break
+            },
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break
+            },
+            Err(ReadlineError::Io(err)) => return Err(err),
+            Err(ReadlineError::Utf8Error) => {
+                println!("Error: line is not valid utf8");
+                continue
             }
+            Err(ReadlineError::Errno(err)) => {
+                println!("Error: {}", err);
+                break
+            }
+            Err(e) => panic!(e),
+        };
+        match DiceParser::parse(Rule::calculation, &line) {
+            Err(e) => println!("{}", e),
             Ok(parsed) => {
                 let val = eval(parsed);
-                print!("{}\n> ", val);
-                let _ = stdout().flush();
+                ed.add_history_entry(&line);
+                println!("{}", val);
             }
         }
     }
@@ -75,14 +88,14 @@ fn eval(expression: Pairs<Rule>) -> f64 {
         |pair: Pair<Rule>| match pair.as_rule() {
             Rule::die => {
                 let mut s = pair.as_str().split('d');
-                let first = s.next().unwrap().parse::<u32>().unwrap();
+                let first = s.next().unwrap().parse::<u64>().unwrap();
                 match s.next() {
                     None => first as f64,
                     Some(second) => {
-                        let second = second.parse::<u32>().unwrap();
-                        let mut sum = 0;
+                        let second: u64 = second.parse().unwrap();
+                        let mut sum = 0u64;
                         for _ in 0..first {
-                            sum += Uniform::from(0..second).sample(&mut thread_rng())
+                            sum += Uniform::from(1..=second).sample(&mut thread_rng())
                         }
                         sum as f64
                     }
