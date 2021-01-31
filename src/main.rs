@@ -60,10 +60,6 @@ fn main() -> io::Result<()> {
                 break
             },
             Err(ReadlineError::Io(err)) => return Err(err),
-            Err(ReadlineError::Utf8Error) => {
-                println!("Error: line is not valid utf8");
-                continue
-            }
             Err(ReadlineError::Errno(err)) => {
                 println!("Error: {}", err);
                 break
