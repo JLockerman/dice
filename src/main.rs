@@ -4,7 +4,7 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
-use std::io;
+use std::process::exit;
 
 use pest::{
     Parser,
@@ -45,7 +45,7 @@ static PREC_CLIMBER: Lazy<PrecClimber<Rule>> = Lazy::new(||{
     ])
 });
 
-fn main() -> io::Result<()> {
+fn main() {
     let mut ed = Editor::<()>::new();
     loop {
         let line = ed.readline("> ");
@@ -59,12 +59,10 @@ fn main() -> io::Result<()> {
                 println!("CTRL-D");
                 break
             },
-            Err(ReadlineError::Io(err)) => return Err(err),
-            Err(ReadlineError::Errno(err)) => {
-                println!("Error: {}", err);
-                break
-            }
-            Err(e) => panic!(e),
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                exit(1)
+            },
         };
         match DiceParser::parse(Rule::calculation, &line) {
             Err(e) => println!("{}", e),
@@ -75,7 +73,6 @@ fn main() -> io::Result<()> {
             }
         }
     }
-    Ok(())
 }
 
 fn eval(expression: Pairs<Rule>) -> f64 {

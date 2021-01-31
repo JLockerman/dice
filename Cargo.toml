@@ -11,4 +11,4 @@ pest = "2"
 pest_derive = "2"
 once_cell = "1"
 rand = "0.7.3"
-rustyline = "6"
+rustyline = { version = "7", default-features = false }
